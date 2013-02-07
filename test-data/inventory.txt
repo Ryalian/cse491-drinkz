@@ -1,0 +1,6 @@
+#this file is to test for load-inventory
+ 
+Johnnie Walker,Black Label,1000 ml
+Johnnie Walker,Black Label,50 oz
+John Walker,Black Label,1000 ml
+ 
