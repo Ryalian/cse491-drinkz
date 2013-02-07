@@ -62,6 +62,32 @@ def test_bulk_load_inventory_1():
     assert db.check_inventory('Johnnie Walker', 'Black Label')
     assert n == 1, n
 
+def test_bulk_load_inventory_2():
+    #test for whitespace line
+    db._reset_db()
+
+    db.add_bottle_type('Johnnie Walker', 'Black Label', 'blended scotch')  
+
+    data = " "
+    fp = StringIO(data)                 # make this look like a file handle
+    n = load_bulk_data.load_inventory(fp)
+
+    assert n == 0, n
+
+def test_bulk_load_inventory_3():
+    #test for comment line
+    db._reset_db()
+
+    db.add_bottle_type('Johnnie Walker', 'Black Label', 'blended scotch')  
+
+    data = "#Johnnie Walker,Black Label,1000 ml"
+    fp = StringIO(data)                 # make this look like a file handle
+    n = load_bulk_data.load_inventory(fp)
+
+    assert n == 0, n
+
+
+
 def test_get_liquor_amount_2():
     db._reset_db()
 
@@ -74,6 +100,24 @@ def test_get_liquor_amount_2():
     amount = db.get_liquor_amount('Johnnie Walker', 'Black Label')
     assert amount == '1000 ml', amount
 
+def test_get_liquor_amount_3():
+    #this test is to test if get_liquor_amount works with two units
+    db._reset_db()
+
+    db.add_bottle_type('Johnnie Walker', 'Black Label', 'blended scotch')
+
+    data = "Johnnie Walker,Black Label,1000 ml"
+    fp = StringIO(data)                 # make this look like a file handle
+    n = load_bulk_data.load_inventory(fp)
+
+    data2 = "Johnnie Walker,Black Label,200 oz"
+    fp2 = StringIO(data2)                 # make this look like a file handle
+    n2 = load_bulk_data.load_inventory(fp2)
+
+    amount = db.get_liquor_amount('Johnnie Walker', 'Black Label')
+    assert amount == '6800 ml', amount
+
+
 def test_bulk_load_bottle_types_1():
     db._reset_db()
 
@@ -84,10 +128,46 @@ def test_bulk_load_bottle_types_1():
     assert db._check_bottle_type_exists('Johnnie Walker', 'Black Label')
     assert n == 1, n
 
+def test_bulk_load_bottle_types_2():
+    #the test is of testing empty line
+    db._reset_db()
+
+    data = "     "
+    fp = StringIO(data)                 # make this look like a file handle
+    n = load_bulk_data.load_bottle_types(fp)
+
+    assert n == 0, n
+
+def test_bulk_load_bottle_types_3():
+    #testing for comment line, for load_bottle_types
+    db._reset_db()
+
+    data = "#this comment line is very evil,I assume no one would find it;)"
+    fp = StringIO(data)                 # make this look like a file handle
+    n = load_bulk_data.load_bottle_types(fp)
+
+    assert n == 0, n
+
+def test_bulk_load_bottle_types_4():
+    #test for another type of comment line which has exactly 3 arguements 
+    db._reset_db()
+
+    data = "#Johnnie Walker,Black Label,blended scotch"
+    fp = StringIO(data)                 # make this look like a file handle
+    n = load_bulk_data.load_bottle_types(fp)
+    assert n == 0, n
+
 def test_script_load_bottle_types_1():
     scriptpath = 'bin/load-liquor-types'
     module = imp.load_source('llt', scriptpath)
     exit_code = module.main([scriptpath, 'test-data/bottle-types-data-1.txt'])
+
+    assert exit_code == 0, 'non zero exit code %s' % exit_code
+
+def test_script_load_inventory():
+    scriptpath = 'bin/load-liquor-inventory'
+    module = imp.load_source('llt', scriptpath)
+    exit_code = module.main([scriptpath, 'test-data/inventory.txt'])
 
     assert exit_code == 0, 'non zero exit code %s' % exit_code
     
