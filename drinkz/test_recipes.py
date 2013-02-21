@@ -24,8 +24,9 @@ class TestBasicRecipeStuff(unittest.TestCase):
         x = list(db.get_all_recipes())
         assert len(x) == 1              # should be only one recipe
         assert r in x
+	assert x[0] == r
 
-    def test_get_recipe_2(self):
+    def test_add_recipe_2(self):
         r = recipes.Recipe('scotch on the rocks', [('blended scotch',
                                                    '4 oz')])
         db.add_recipe(r)
@@ -44,6 +45,8 @@ class TestBasicRecipeStuff(unittest.TestCase):
         db.add_recipe(r)
 
         x = db.get_recipe('scotch on the rocks')
+	print x.recipe
+	print r.recipe
         assert x == r
 
     def test_get_recipe_2(self):
@@ -87,6 +90,7 @@ class TestIngredients(object):
                                                       '1.5 oz')])
 
         missing = r.need_ingredients()
+	print missing
         assert missing
         assert len(missing) == 1
 
