@@ -84,8 +84,8 @@ fp.close()
 fp = open('html/liquor_types.html', 'w')
 
 liquors = "<ol>"
-for mfg, liquor, type in db._bottle_types_db():
-      liquors += "<li>" +"100"+ "</li>"
+for mfg,liquor,type in db._bottle_types_db:
+      liquors += "<li>" +mfg+"  "+liquor+ "</li>"
 
 
 liquors = liquors+"</ol>" + addr

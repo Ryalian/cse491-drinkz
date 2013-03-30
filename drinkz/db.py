@@ -8,7 +8,7 @@ from  recipes import Recipe
 _bottle_types_db = set()
 _inventory_db = {}
 _recipe_db = {}
-
+_converse = ''
 class LiquorMissing(Exception):
     pass
 
@@ -121,7 +121,7 @@ def check_inventory_for_type(liquor, amount):
 
 def convert_to_ml(a):
 	l = a.split(" ")
-	
+	am = 0
 	if l[1] =="oz":
              am = float(l[0])*29.57
 	if l[1] == "ml":

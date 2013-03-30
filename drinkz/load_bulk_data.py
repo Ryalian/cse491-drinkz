@@ -36,6 +36,7 @@ def load_bottle_types(fp):
 	        db.add_bottle_type(mfg, name, typ)
 	except:
 		print 'Fail to add bottle type'
+		pass
     return n
 
 def load_inventory(fp):
@@ -66,7 +67,6 @@ def load_inventory(fp):
 		db.add_to_inventory(mfg, name, amount)
 	except db.LiquorMissing:
 		print 'Can not find this liqour in inventory'
-		pass
     return n
 
 
@@ -79,6 +79,9 @@ PS: I fogot to save last time, redoing everything:(
 def data_reader(fp):
 	reader = csv.reader(fp)
 	for line in reader:
+	    try:
 		if line[0].startswith('#') or not line[0].strip():
 		   continue
 		yield line
+	    except:
+	  	pass
