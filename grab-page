@@ -1,0 +1,19 @@
+import socket, sys
+
+def main(args):
+
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.connect((args[1], int(args[2])))
+    s.send("GET / HTTP/1.0\r\n\r\n")
+
+    while True:
+        buf = s.recv(1000)
+        if not buf:
+            break
+        sys.stdout.write(buf)
+
+    s.close()
+    print
+
+if __name__ == '__main__':
+    main(sys.argv)
