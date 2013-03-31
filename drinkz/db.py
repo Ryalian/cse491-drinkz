@@ -1,8 +1,8 @@
+# -*- coding: iso-8859-1 -*-
 """
 Database functionality for drinkz information.
 """
-from  recipes import Recipe 
-
+import recipes
 
 from cPickle import dump, load
 
@@ -38,25 +38,25 @@ def get_recipe(name):
 	return False
 
 def get_all_recipes():
-	all = set()
+	all = []
 	for recipe in _recipe_db:
-		all.add(_recipe_db[recipe])
+		all.append(_recipe_db[recipe])
 	return all
 
 def save_db(filename):
     fp = open(filename, 'wb')
 
-    tosave = (_bottle_types_db, _inventory_db)
+    tosave = (_bottle_types_db, _inventory_db, _recipe_db)
     dump(tosave, fp)
 
     fp.close()
 
 def load_db(filename):
-    global _bottle_types_db, _inventory_db
+    global _bottle_types_db, _inventory_db, _recipe_db
     fp = open(filename, 'rb')
 
     loaded = load(fp)
-    (_bottle_types_db, _inventory_db) = loaded
+    (_bottle_types_db, _inventory_db,_recipe_db) = loaded
 
     fp.close()
 
@@ -150,4 +150,4 @@ def convert_to_ml(a):
 	if l[1] =="liter":
              am = float(l[0]) * 1000.0
 
-	return am
+	return am 

@@ -1,10 +1,22 @@
 #! /usr/bin/env python
+# -*- coding: iso-8859-1 -*-
 from wsgiref.simple_server import make_server
 import urlparse
 import simplejson
 import db, recipes
+import sys
+import os
+import css_html
+
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+_path_db = os.path.dirname(__file__) + '../database'
+
 
 #Input different data
+#try:
+#	db.load_db(_path_db)
+#except:
+
 db.add_bottle_type('Johnnie Walker', 'black label', 'blended scotch')
 db.add_to_inventory('Johnnie Walker', 'black label', '500 ml')
 db.add_bottle_type('Uncle Herman\'s', 'moonshine', 'blended scotch')
@@ -28,8 +40,6 @@ dispatch = {
     '/liquor_type' : 'liquor_type',
     '/convert' : 'convert',
     '/convert_result' : 'convert_result',
-    '/form' : 'form',
-    '/recv' : 'recv',
     '/rpc'  : 'dispatch_rpc'
 }
 
@@ -68,14 +78,9 @@ class SimpleApp(object):
     def index(self, environ, start_response):
         data = direction
         start_response('200 OK', list(html_headers))
+	data = css_html.cssgen('red','30','Index') + data + css_html.htmlgen()
         return [data]
-        
-    def somefile(self, environ, start_response):
-        content_type = 'text/html'
-        data = open('somefile.html').read()
 
-        start_response('200 OK', list(html_headers))
-        return [data]
 
     def error(self, environ, start_response):
         status = "404 Not Found"
@@ -85,31 +90,7 @@ class SimpleApp(object):
         start_response('200 OK', list(html_headers))
         return [data]
 
-    def helmet(self, environ, start_response):
-        content_type = 'image/gif'
-        data = open('Spartan-helmet-Black-150-pxls.gif', 'rb').read()
 
-        start_response('200 OK', [('Content-type', content_type)])
-        return [data]
-
-    def form(self, environ, start_response):
-        data = form()
-
-        start_response('200 OK', list(html_headers))
-        return [data]
-   
-    def recv(self, environ, start_response):
-        formdata = environ['QUERY_STRING']
-        results = urlparse.parse_qs(formdata)
-
-        firstname = results['firstname'][0]
-        lastname = results['lastname'][0]
-
-        content_type = 'text/html'
-        data = "First name: %s; last name: %s.  <a href='./'>return to index</a>" % (firstname, lastname)
-
-        start_response('200 OK', list(html_headers))
-        return [data]
 #Recipe page
     def recipe(self,environ, start_response):
 	data = direction
@@ -121,7 +102,7 @@ class SimpleApp(object):
 		else:
 			lacks = "No"
 		recipes += "<li>" + r.name +": " + lacks + "</li>\n"
-	data = data + recipes
+	data = css_html.cssgen('green','30','Recipe')+data + recipes + css_html.htmlgen()
 	start_response('200 OK', list(html_headers))
 	return [data]	
 #Inventory Page
@@ -134,6 +115,7 @@ class SimpleApp(object):
 		amount = db.get_liquor_amount(mfg,l)
 		inventory += "<li>" + mfg + ", " + l + ": " + str(amount) + "ml </li>\n"
 	data = data + inventory + "</ol>"
+        data = css_html.cssgen('blue','30','Inventory') + data + css_html.htmlgen()
 	start_response('200 OK', list(html_headers))
 	return [data]
 
@@ -143,14 +125,17 @@ class SimpleApp(object):
 	liquors = "<ol>" 
 	for mfg, liquor, typ in db._bottle_types_db:
 		liquors += "<li>" + mfg + "  " + "</li>"
-	data = data + liquors +"</o>l"
+	data = data + liquors +"</o>"
+        data = css_html.cssgen('yellow','30','Liquor Type') + data + css_html.htmlgen()
 	start_response('200 OK', list(html_headers))
 	return [data]
 
 #Convertion Page
     def convert(self, environ, start_response):
 	data = convert()
+        data = css_html.cssgen('pink','30','Convertion') + data + css_html.htmlgen()
 	start_response('200 k', list(html_headers))
+	data +="<p><a href='index'>Index</a>"
 	return [data]
 
     def convert_result(self, environ, start_response):
@@ -161,8 +146,10 @@ class SimpleApp(object):
         unit = results['unit'][0]
         ml = db.convert_to_ml(amount + " " + unit)
         content_type = 'text/html'
-        data = "After unit conversion: %s ml;   <a href='./'><p> return to index</a>" % (ml)
-
+        data = "<a>After unit conversion: %s ml</a>   <a href='./'><p> return to index</a>" % (ml)
+        
+ 	if amount != 0 and ml ==0:
+		data = "<a>Wrong format<a>     <a href='./'><p> return to index</a>"
         start_response('200 OK', list(html_headers))
         return [data]
 
@@ -207,12 +194,24 @@ class SimpleApp(object):
         response = simplejson.dumps(response)
         return str(response)
 
-    def rpc_hello(self):
-        return 'world!'
+#Homework 4-5
+    def rpc_convert_units_to_ml(self,amount):
+	return db.convert_to_ml(amount)
 
-    def rpc_add(self, a, b):
-        return int(a) + int(b)
-    
+    def rpc_get_recipe_names(self):
+        lack = db.get_all_recipes()
+        recipe = []
+	for r in db.get_all_recipes():
+		recipe.append(r.name)
+	return recipe
+
+    def rpc_liquor_inventory(self):
+	inventory = []
+	liquor =  db.get_liquor_inventory()
+	for mfg ,l in liquor:
+		inventory.append((mfg,l))
+	return inventory
+       
 def form():
     return """
 <form action='recv'>
