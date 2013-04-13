@@ -1,0 +1,11 @@
+HOW bulk-load recipes WORKS??
+
+In drinkz folder, there is a file called   ""test_load_recipe.py""
+                                             -------------------  
+In the file, a function called load_recipe() is used for loading recipe
+                               -------------
+This function would takes a arguement contains one or more recipes and converts it into recipes format
+
+Specifically, it takes recipes in the format of "<recipe_name (liquor1,amount) (liquor2,amount)> <recipe2_name (liquor3,amount) (liquor4,amount)>" etc.                                              ------------------------------------------------------------------------------------------------
+
+Test file is drinkz/test_recipe2.py

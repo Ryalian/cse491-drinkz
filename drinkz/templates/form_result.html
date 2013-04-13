@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+
+{% block content %}
+
+{{ direction}}
+
+<p>Got {{ input_type }}</p> 
+<p>{{ cont }}</p>
+<p>Enter  {{ input_type }}:</p>
+<form action={{ result_action }}>
+<input type='text' name='Input' size'20'>
+<input type='submit'>
+</form>
+
+{% endblock %}

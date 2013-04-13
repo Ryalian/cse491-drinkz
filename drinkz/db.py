@@ -131,23 +131,66 @@ def get_liquor_inventory():
 
 def check_inventory_for_type(liquor, amount):
 	need = amount
-	for key in sorted(_bottle_types_db):
+	for key in _bottle_types_db:
 	    m,l,t = key
 	    if t == liquor:
-		print amount
 		need = amount - get_liquor_amount(m,l)
 	return need
+
+def need_ingredients(recipe):
+	   short = []
+	 
+	   for type, amount in recipe.recipe:
+		leck = check_inventory_for_type(type,convert_to_ml(amount))
+
+		if not leck<0.0:
+		   short.append((type,leck))
+	   return short
+	   
+	   
+##for homework 5-2 #############################################
+def check_inventory_for_type_multi(liquor, amount, number):
+	need = amount
+	for key in _bottle_types_db:
+	    m,l,t = key
+	    if t == liquor:
+		need = amount * float(number) - get_liquor_amount(m,l) 
+	return need
+
+
+def need_ingredients_multi(recipe_name, number):
+	   short = []
+	   recipe = _recipe_db[recipe_name]
+	   for type, amount in recipe.recipe:
+		leck = check_inventory_for_type_multi(type,convert_to_ml(amount), number)
+
+		if not leck<0:
+		   short.append((type,leck))
+	   return short  
+  
+  
+  
+  
 
 def convert_to_ml(a):
 	l = a.split(" ")
 	am = 0
 	if l[1] =="oz":
              am = float(l[0])*29.57
-	if l[1] == "ml":
+	elif l[1] == "ml":
              am = float(l[0]) 
-        if l[1] =="gallon":           
+        elif l[1] =="gallon":           
              am = float(l[0]) * 3785.41
-	if l[1] =="liter":
+	elif l[1] =="liter":
              am = float(l[0]) * 1000.0
-
+	else:
+	     am = False
 	return am 
+
+
+def get_available_recipe():
+	available_recipe = []
+	for recipe in _recipe_db:
+	  if need_ingredients(_recipe_db[recipe]) == []:
+	    available_recipe.append(recipe)
+	return available_recipe

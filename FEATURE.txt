@@ -1,0 +1,14 @@
+Bill is a party animal and he wants to have a party everyday. He has some favourite resipe.
+Because he's very rich, he would buy every liquor on his own.
+There is a big amount of party friend he has so he wants to know is he has enough liquor in his carbin. If not, he wants to check how much he needs to buy.
+
+
+Features:
+1.Stored recipes and maybe new added recipes
+2.The amount of a certain type of recipe
+3.Given a inventory and see if we have enough liquor
+
+Data storage:
+1.We need to store the recipes
+2.Mark down the amount of the drink
+3.Data of what kind and how much liquor we have in our inventory

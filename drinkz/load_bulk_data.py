@@ -85,3 +85,9 @@ def data_reader(fp):
 		yield line
 	    except:
 	  	pass
+
+if __name__ == '__main__':
+  recipe = raw_input('Input recipe(In format of "<name (name,amount) (name,amount)...>"\n')
+  print recipe+'bbbb'
+  load_recipe(recipe)
+

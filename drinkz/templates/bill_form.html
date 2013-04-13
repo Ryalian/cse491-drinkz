@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+
+{% block content %}
+
+
+Visit:
+<p><a href='index'>Index</a>
+<p><a href='recipe'>Recipe</a>
+<p><a href='inventory'>Inventory</a>
+<p><a href='liquor_type'>Liquor Types</a>
+<p><a href='convert'>Unit Conversion</a>
+<p><a href='enter_liquor_type'>Enter Liquor type</a>
+<p><a href='enter_liquor_inventory'>Enter Liquor Inventory</a>
+<p><a href='enter_recipes'>Enter Recipes</a>
+
+<p>Enter  {{ input_type }}:</p>
+<form action={{ result_action }}>
+Recipe<input type='text' name='Input' size'200'>
+Number<input type='text' name='Number' size'200'>
+<input type='submit'>
+</form>
+
+{% endblock %}

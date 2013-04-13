@@ -1,0 +1,185 @@
+#! /usr/bin/env python
+# -*- coding: iso-8859-1 -*-
+from wsgiref.simple_server import make_server
+import urlparse
+import simplejson
+import db, recipes
+import sys
+import os
+import css_html
+import jinja2
+
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+_path_db = os.path.dirname(__file__) + '/../database'
+
+
+#Input different data
+
+db.load_db(_path_db)
+
+
+
+dispatch = {
+    '/' : 'index',
+    '/liquor_type' : 'liquor_type',
+    '/inventory' : 'inventory',
+    '/recipes' : 'recipes',
+    '/rpc'  : 'dispatch_rpc'
+}
+
+html_headers = [('Content-type', 'text/html')]
+
+direction = """\
+Visit:
+<p><a href='index'>Index</a>
+<p><a href='recipe'>Recipe</a>
+<p><a href='inventory'>Inventory</a>
+<p><a href='liquor_type'>Liquor Types</a>
+"""
+
+class SimpleApp(object):
+    def __init__(self):
+	self.convertvalue = 0;
+
+    def __call__(self, environ, start_response):
+
+        path = environ['PATH_INFO']
+        fn_name = dispatch.get(path, 'index')
+
+        # retrieve 'self.fn_name' where 'fn_name' is the
+        # value in the 'dispatch' dictionary corresponding to
+        # the 'path'.
+        fn = getattr(self, fn_name, None)
+
+        if fn is None:
+            start_response("404 Not Found", html_headers)
+            return ["No path %s found" % path]
+
+        return fn(environ, start_response)
+            
+    def index(self, environ, start_response):
+        data = direction
+        start_response('200 OK', list(html_headers))
+	data = css_html.cssgen('red','30','Index') + data + css_html.htmlgen()
+        return [data]
+
+
+
+
+#Convertion Page
+    def convert(self, environ, start_response):
+	data = convert()
+        data = css_html.cssgen('pink','30','Convertion') + data + css_html.htmlgen()
+	start_response('200 k', list(html_headers))
+	data +="<p><a href='index'>Index</a>"
+	return [data]
+
+    def convert_result(self, environ, start_response):
+        formdata = environ['QUERY_STRING']
+        results = urlparse.parse_qs(formdata)
+	
+        amount = results['amount'][0]
+        unit = results['unit'][0]
+        ml = db.convert_to_ml(amount + " " + unit)
+        content_type = 'text/html'
+        data = "<a>After unit conversion: %s ml</a>   <a href='./'><p> return to index</a>" % (ml)
+        
+ 	if amount != 0 and ml ==0:
+		data = "<a>Wrong format<a>     <a href='./'><p> return to index</a>"
+        start_response('200 OK', list(html_headers))
+        return [data]
+
+
+    def dispatch_rpc(self, environ, start_response):
+        # POST requests deliver input data via a file-like handle,
+        # with the size of the data specified by CONTENT_LENGTH;
+        # see the WSGI PEP.
+        
+        if environ['REQUEST_METHOD'].endswith('POST'):
+            body = None
+            if environ.get('CONTENT_LENGTH'):
+                length = int(environ['CONTENT_LENGTH'])
+                body = environ['wsgi.input'].read(length)
+                response = self._dispatch(body) + '\n'
+                start_response('200 OK', [('Content-Type', 'application/json')])
+
+                return [response]
+
+        # default to a non JSON-RPC error.
+        status = "404 Not Found"
+        content_type = 'text/html'
+        data = "Couldn't find your stuff."
+       
+        start_response('200 OK', list(html_headers))
+        return [data]
+
+    def _decode(self, json):
+        return simplejson.loads(json)
+
+    def _dispatch(self, json):
+        rpc_request = self._decode(json)
+
+        method = rpc_request['method']
+        params = rpc_request['params']
+        
+        rpc_fn_name = 'rpc_' + method
+        fn = getattr(self, rpc_fn_name)
+        result = fn(*params)
+
+        response = { 'result' : result, 'error' : None, 'id' : 1 }
+        response = simplejson.dumps(response)
+        return str(response)
+
+#Homework 4-5
+    def rpc_convert_units_to_ml(self,amount):
+	return db.convert_to_ml(amount)
+
+    def rpc_get_recipe_names(self):
+        lack = db.get_all_recipes()
+        recipe = []
+	for r in db.get_all_recipes():
+		recipe.append(r.name)
+	return recipe
+
+    def rpc_liquor_inventory(self):
+	inventory = []
+	liquor =  db.get_liquor_inventory()
+	for mfg ,l in liquor:
+		inventory.append(mfg)
+	return inventory
+
+
+    def load_database(self):
+	try:
+        	db.load_db(_path_db)
+	except:
+
+        	db.add_bottle_type('Johnnie Walker', 'black label', 'blended scotch')
+        	db.add_to_inventory('Johnnie Walker', 'black label', '500 ml')
+        	db.add_bottle_type('Uncle Herman\'s', 'moonshine', 'blended scotch')
+        	db.add_to_inventory('Uncle Herman\'s', 'moonshine', '5 liter')
+        	db.add_bottle_type('Gray Goose', 'vodka', 'unflavored vodka')
+        	db.add_to_inventory('Gray Goose', 'vodka', '1 liter')
+        	db.add_bottle_type('Rossi', 'extra dry vermouth', 'vermouth')
+        	db.add_to_inventory('Rossi', 'extra dry vermouth', '24 oz')
+        	r1 = recipes.Recipe('vomit inducing martini', [('orange juice','6 oz'),('vermouth','1.5 oz')])
+        	r2 = recipes.Recipe('scotch on the rocks', [('blended scotch', '4 oz')])
+        	r3 = recipes.Recipe('vodka martini', [('unflavored vodka', '6 oz'),('vermouth', '1.5 oz')])
+        	db.add_recipe(r1)
+        	db.add_recipe(r2)
+        	db.add_recipe(r3)
+       
+
+
+
+if __name__ == '__main__':
+    import random, socket
+    port = random.randint(8000, 9999)
+    
+    app = SimpleApp()
+    
+    httpd = make_server('', port, app)
+    print "Serving on port %d..." % port
+    print "Try using a Web browser to go to http://%s:%d/" % \
+          (socket.getfqdn(), port)
+    httpd.serve_forever()
