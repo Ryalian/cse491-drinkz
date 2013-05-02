@@ -5,7 +5,8 @@
 
 
 Visit:
-<p><a href='index'>Index</a>
+
+<p><font color="#00FF00" face = "Verdana"><a href='index'>Index</a>
 <p><a href='recipe'>Recipe</a>
 <p><a href='inventory'>Inventory</a>
 <p><a href='liquor_type'>Liquor Types</a>
@@ -13,11 +14,21 @@ Visit:
 <p><a href='enter_liquor_type'>Enter Liquor type</a>
 <p><a href='enter_liquor_inventory'>Enter Liquor Inventory</a>
 <p><a href='enter_recipes'>Enter Recipes</a>
-
+</font>
+<li><font color="green" size = 4 face = "Verdana">
+Bill is a party animal and he wants to have a party everyday. He has some favourite resipe.
+Because he's very rich, he would buy every liquor on his own.</font></li>
+<li><font color="green" size = 4 face = "Verdana">
+Because he's very rich, he would buy every liquor on his own. But only one recipe a time</font></li>
+<li><font color="green" size = 4 face = "Verdana">
+There is a big amount of party friend he has so he wants to know is he has enough liquor in his carbin.
+If not, he wants to check how much he needs to buy.</font></li>
+<p><font color="red" size = 100>Current stored recipes:</p></font>
+{{recipe}}
 <p>Enter  {{ input_type }}:</p>
 <form action={{ result_action }}>
 Recipe<input type='text' name='Input' size'200'>
-Number<input type='text' name='Number' size'200'>
+Number<input type='text' name='Amount' size'200'>
 <input type='submit'>
 </form>
 

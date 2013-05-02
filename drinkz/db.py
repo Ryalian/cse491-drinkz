@@ -3,10 +3,19 @@
 Database functionality for drinkz information.
 """
 import recipes
-
+import sqlite3, os
 from cPickle import dump, load
 
-# private singleton variables at module level
+
+try:
+    os.unlink('tables.db')
+except OSError:
+    pass
+
+db = sqlite3.connect('tables.db')
+c = db.cursor()
+
+
 _bottle_types_db = set()
 _inventory_db = {}
 _recipe_db = {}
@@ -19,7 +28,7 @@ class DuplicateRecipeName(Exception):
 
 def _reset_db():
     "A method only to be used during testing -- toss the existing db info."
-    global _bottle_types_db, _inventory_db, _recipe_db
+    global _bottle_types_db, _inventory_db, _recipe_db,c
     _bottle_types_db = set()
     _inventory_db = {}
     _recipe_db = {}

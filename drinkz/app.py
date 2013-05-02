@@ -9,7 +9,8 @@ import os
 import css_html
 import jinja2
 import test_load_recipe
-
+import uuid
+from Cookie import SimpleCookie
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 try:
@@ -41,7 +42,10 @@ dispatch = {
     '/enter_recipes_result' : 'enter_recipes_result',
     '/rpc'  : 'dispatch_rpc',
     '/bill' : 'bill',
-    '/bill_result' : 'bill_result'
+    '/bill_result' : 'bill_result',
+    '/login_1'  : 'login_1',
+    '/login1_process' : 'login1_process',
+    '/logout' : 'logout'
 }
 
 html_headers = [('Content-type', 'text/html')]
@@ -50,20 +54,21 @@ html_headers = [('Content-type', 'text/html')]
 direction = """\n
 Visit:
 <p><a href='index'>Index</a>
+<p><a href='login_1'>Login</a>
 <p><a href='recipe'>Recipe</a>
 <p><a href='inventory'>Inventory</a>
 <p><a href='liquor_type'>Liquor Types</a>
 <p><a href='convert'>Unit Conversion</a>
-<p><a href='enter_liquor_type'>Enter Liquor type</a>
+<p><a href='enter_liquor_type'>Enter New Liquor type</a>
 <p><a href='enter_liquor_inventory'>Enter Liquor Inventory</a>
-<p><a href='enter_recipes'>Enter Recipes</a>
-<p><a href='bill'>BILL</a>\n
+<p><a href='enter_recipes'>Enter New Recipes</a>
+<p><a href='bill'>BILL's Party</a>\n
 """
 
 class SimpleApp(object):
     def __init__(self):
 	self.convertvalue = 0;
-
+	self.usernames = {}
     def __call__(self, environ, start_response):
 
         path = environ['PATH_INFO']
@@ -87,15 +92,68 @@ class SimpleApp(object):
         start_response('200 OK', list(html_headers))
 	data = css_html.cssgen('red','30','Index') + data + css_html.htmlgen()
         return [data]
-
-
-    def error(self, environ, start_response):
-        status = "404 Not Found"
-        content_type = 'text/html'
-        data = "Couldn't find your stuff."
-       
+#############Login############
+    def login_1(self, environ, start_response):
         start_response('200 OK', list(html_headers))
-        return [data]
+	loader = jinja2.FileSystemLoader('./templates')
+	env = jinja2.Environment(loader=loader)
+	
+        name1 = ''
+        name1_key = '*empty*'
+        if 'HTTP_COOKIE' in environ:
+
+            c = SimpleCookie(environ.get('HTTP_COOKIE', ''))
+            if 'name1' in c:
+                key = c.get('name1').value
+                name1 = self.usernames.get(key, '')
+                name1_key = key	
+
+	
+        title = 'login'
+        template = env.get_template('login1.html')
+
+        return str(template.render(locals()))
+
+    def login1_process(self, environ, start_response):
+        formdata = environ['QUERY_STRING']
+        results = urlparse.parse_qs(formdata)
+
+        name = results['name'][0]
+        content_type = 'text/html'
+
+        # authentication would go here -- is this a valid username/password,
+        # for example?
+
+        k = str(uuid.uuid4())
+     
+        self.usernames[k] = name
+	print "I am here"   ,k
+        headers = list(html_headers)
+        headers.append(('Location', '/login_1'))
+        headers.append(('Set-Cookie', 'name1=%s' % k))
+
+        start_response('302 Found', headers)
+        return ["Redirect to Index"]
+
+    def logout(self, environ, start_response): 
+        if 'HTTP_COOKIE' in environ:
+            c = SimpleCookie(environ.get('HTTP_COOKIE', ''))
+            if 'name1' in c:
+                key = c.get('name1').value
+                name1_key = key
+
+                if key in self.usernames:
+                    del self.usernames[key]
+                    print 'DELETING'
+
+        pair = ('Set-Cookie',
+                'name1=deleted; Expires=Thu, 01-Jan-1970 00:00:01 GMT;')
+        headers = list(html_headers)
+        headers.append(('Location', '/'))
+        headers.append(pair)
+
+        start_response('302 Found', headers)
+        return ["Redirect to Index"]
 
 
 #Recipe page
@@ -110,7 +168,7 @@ class SimpleApp(object):
 			lacks = "No"
 		
 		recipes += "<li>" + r.name +": " + lacks+"</li>\n"
-	data = css_html.cssgen('green','30','Recipe')+data + recipes + css_html.htmlgen()
+	data = css_html.cssgen('green','30','Recipe')+data + recipes
 	start_response('200 OK', list(html_headers))
 	return [data]	
 #Inventory Page
@@ -123,7 +181,7 @@ class SimpleApp(object):
 		amount = db.get_liquor_amount(mfg,l)
 		inventory += "<li>" + mfg + ", " + l + ": " + str(amount) + "ml </li>\n"
 	data = data + inventory + "</ol>"
-        data = css_html.cssgen('blue','30','Inventory') + data + css_html.htmlgen()
+        data = css_html.cssgen('blue','30','Inventory') + data
 	start_response('200 OK', list(html_headers))
 	return [data]
 
@@ -134,14 +192,15 @@ class SimpleApp(object):
 	for mfg, liquor, typ in db._bottle_types_db:
 		liquors += "<li>" + mfg + "  " + "</li>"
 	data = data + liquors +"</o>"
-        data = css_html.cssgen('yellow','30','Liquor Type') + data + css_html.htmlgen()
+        data = css_html.cssgen('yellow','30','Liquor Type') + data
 	start_response('200 OK', list(html_headers))
 	return [data]
 
 #Convertion Page
     def convert(self, environ, start_response):
+	content_type = 'text/html'
 	data = convert()
-        data = css_html.cssgen('pink','30','Convertion') + data + css_html.htmlgen()
+        data = css_html.cssgen('pink','30','Convertion') + data 
 	start_response('200 k', list(html_headers))
 	data +="<p><a href='index'>Index</a>"
 	return [data]
@@ -232,7 +291,7 @@ class SimpleApp(object):
 	loader = jinja2.FileSystemLoader('./templates')
 	env = jinja2.Environment(loader=loader)
 	
-	filename = 'form.html'
+	filename = 'recipeform.html'
 	vars = dict(input_type = 'recipes', result_action = 'enter_recipes_result')
 	
 	template = env.get_template(filename)
@@ -264,9 +323,12 @@ class SimpleApp(object):
 	# this sets up jinja2 to load templates from the 'templates' directory
 	loader = jinja2.FileSystemLoader('./templates')
 	env = jinja2.Environment(loader=loader)
-	
+	lack = db.get_all_recipes()
+	recipes = "<ol>"
+	for r in lack:
+		recipes += "<li>" + r.name +"</li>\n"	
 	filename = 'bill_form.html'
-	vars = dict(input_type = 'Input recipe and amount:', result_action = 'bill_result')
+	vars = dict(input_type = 'Input recipe and amount:', result_action = 'bill_result',recipe = recipes)
 	
 	template = env.get_template(filename)
 	start_response('200 k', list(html_headers))
@@ -283,17 +345,24 @@ class SimpleApp(object):
         results = urlparse.parse_qs(formdata)
 	
         recipe = results['Input'][0]
-        amount = results['Number'][0]
+        amount = results['Amount'][0]
         #test_load_recipe.load_recipe(recipe)
         try:
 	  short = db.need_ingredients_multi(recipe, amount)
 	  if short == []:
-	   short = 'Nothing you have enough stuff'
+	   short = 'Need nothing, you have enough stuff'
         except:
 	  short = 'Wrong input'
 	  pass
         filename = 'bill_form_result.html'
-	vars = dict(input_type = 'Recipt and Number', direction = direction,cont ='c', amount = amount, recipe = recipe,short = str(short))
+        recipeshort = ''
+        for l,a in short:
+	  recipeshort+="<li>"
+	  recipeshort+=str(l)
+	  recipeshort+="  "
+	  recipeshort+=str(int(a))
+          recipeshort+= "ml </li>\n"
+	vars = dict(input_type = 'Recipt and Number', direction = direction,cont ='c', amount = amount, recipe = recipe,short = recipeshort)
 	
 	template = env.get_template(filename)
         start_response('200 OK', list(html_headers))
@@ -483,21 +552,45 @@ class SimpleApp(object):
         	db.add_recipe(r2)
         	db.add_recipe(r3)
        
-def form():
-    return """
-<form action='recv'>
-Your first name? <input type='text' name='firstname' size'20'>
-Your last name? <input type='text' name='lastname' size='20'>
-<input type='submit'>
-</form>
-"""
+
 
 def convert():
     return """
-<form action='convert_result'>
-amount <input type='text' name='amount' size'20'>
-unit <input type='text' name='unit' size='20'>
-<input type='submit'>
+<head>    
+<script type="text/javascript" charset="utf-8" src="http://code.jquery.com/jquery-1.7.2.min.js"></script>
+</head>
+<p class='toupdate' />
+
+<script type="text/javascript">
+
+function update_result(a) {
+   text = '<font color="red" size = 100><b>' + a +'</font></b>';
+   $('p.toupdate').html(text);
+}
+
+$(function(){
+$("#submit").click(function(){
+        var amount = document.getElementById("amount").value;
+        var unit = document.getElementById("unit").value;
+        param = amount + " " + unit;
+
+        var results = document.getElementById("results")
+        $.ajax({
+            url: "http://" + location.host + "/rpc", 
+            data: JSON.stringify({ params: [param], method: "convert_units_to_ml", id: 1 }),
+            type:"POST",
+            dataType:"json",
+            success: function (data) { update_result('Conversion: ' + param + " = " + data.result + " ml")},
+            error: function (err) { alert ("error");}
+         });
+    });
+});
+$('input.a').val("6")
+</script>
+<form>
+amount <input type='text' name='amount' id = 'amount' size'20'>
+unit <input type='text' name='unit' id = 'unit' size='20'>
+<input id="submit" value="Submit" type="button" name="submit" class="btn btn-primary" />
 </form>
 """
 
